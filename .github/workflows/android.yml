@@ -1,0 +1,69 @@
+name: Build Android APK
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: apk-build
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Test the app engine
+        run: node tests/core.test.js
+
+      - name: Check web/index.html matches web-src
+        run: |
+          python3 tools/build.py
+          git diff --exit-code web/index.html
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.14.3'
+
+      - name: Build APK
+        working-directory: android
+        run: gradle :app:assembleRelease --no-daemon --stacktrace 2>&1 | tee ../build.log
+
+      - name: Publish to Releases
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cp android/app/build/outputs/apk/release/app-release.apk LubaVoice-AI.apk
+          cp web/index.html LubaVoice-AI.html
+          gh release delete latest --yes --cleanup-tag || true
+          gh release delete build-log --yes --cleanup-tag || true
+          gh release create latest LubaVoice-AI.apk LubaVoice-AI.html \
+            --target "${{ github.sha }}" \
+            --title "LubaVoice AI 1.0.${{ github.run_number }}" \
+            --notes-file .github/release-notes.md
+
+      - name: Publish the build log if something failed
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          touch build.log
+          gh release delete build-log --yes --cleanup-tag || true
+          gh release create build-log build.log --prerelease \
+            --target "${{ github.sha }}" \
+            --title "Build log (failed run ${{ github.run_number }})" \
+            --notes "The build failed. Download build.log to see why."

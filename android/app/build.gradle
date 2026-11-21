@@ -1,0 +1,55 @@
+plugins {
+    id 'com.android.application'
+}
+
+def buildNumber = (System.getenv('GITHUB_RUN_NUMBER') ?: '1') as Integer
+
+android {
+    namespace 'zm.lubavoice'
+    compileSdk 35
+
+    defaultConfig {
+        applicationId 'zm.lubavoice.ai'
+        minSdk 24
+        targetSdk 34
+        versionCode buildNumber
+        versionName "1.0.${buildNumber}"
+    }
+
+    // One fixed key so new versions install over old ones (your progress stays on the phone).
+    signingConfigs {
+        lubavoice {
+            storeFile file('lubavoice.keystore')
+            storePassword 'lubavoice'
+            keyAlias 'lubavoice'
+            keyPassword 'lubavoice'
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            signingConfig signingConfigs.lubavoice
+        }
+        debug {
+            signingConfig signingConfigs.lubavoice
+        }
+    }
+
+    // The app's screens are the offline web app in /web
+    sourceSets {
+        main {
+            assets.srcDirs = ['src/main/assets', '../../web']
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    lint {
+        checkReleaseBuilds false
+        abortOnError false
+    }
+}
