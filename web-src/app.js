@@ -2,6 +2,8 @@
 (function () {
   'use strict';
   const LV = window.LV;
+  const svg = (d, fill) => `<svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="${d}" fill="${fill ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+  const IC = { check: svg('M3 8.5l3 3 7-7'), cross: svg('M4 4l8 8M12 4l-8 8'), alert: svg('M8 3v6M8 12.5v.5'), dot: svg('M8 4a4 4 0 1 0 0 8a4 4 0 1 0 0-8z', true), ring: svg('M8 4a4 4 0 1 0 0 8a4 4 0 1 0 0-8z') };
   const $ = (s, r) => (r || document).querySelector(s);
   const $$ = (s, r) => [...(r || document).querySelectorAll(s)];
   const ANDROID = typeof window.LubaAndroid !== 'undefined';
@@ -230,7 +232,7 @@
     const st = TTS.status;
     if (st === 'ok') {
       cls += 'good';
-      html = ANDROID ? '✓ Greek voice ready (your phone’s text-to-speech).' : '✓ Greek voice ready: <b>' + esc(TTS.voice ? TTS.voice.name : '') + '</b>';
+      html = ANDROID ? 'Greek voice ready (your phone’s text-to-speech).' : 'Greek voice ready: <b>' + esc(TTS.voice ? TTS.voice.name : '') + '</b>';
     } else if (st === 'checking') {
       cls += 'info'; html = 'Checking for a Greek voice…';
     } else if (ANDROID) {
@@ -455,13 +457,13 @@
     box.hidden = false;
     const qc = t.qc, v = $('#verdict');
     v.className = 'verdict ' + qc.verdict;
-    v.textContent = qc.verdict === 'good' ? '✓ Good take' : qc.verdict === 'check' ? '⚠ Usable, but check the tips' : '✗ Please redo this one';
+    v.textContent = qc.verdict === 'good' ? 'Good take' : qc.verdict === 'check' ? 'Usable, but check the tips' : 'Please redo this one';
     $('#facts').textContent = qc.checks.some((c) => c.code === 'no_voice') ? `Length ${qc.duration.toFixed(1)} s`
       : `Length ${qc.duration.toFixed(1)} s · speaking ${qc.speech.toFixed(1)} s · quiet before ${qc.lead.toFixed(1)} s / after ${qc.trail.toFixed(1)} s`;
-    $('#checks').innerHTML = qc.checks.map((c) => `<li class="${c.level}"><span class="ic">${c.level === 'fail' ? '✗' : '!'}</span><span>${esc(c.msg)}</span></li>`).join('');
+    $('#checks').innerHTML = qc.checks.map((c) => `<li class="${c.level}"><span class="ic">${c.level === 'fail' ? IC.cross : IC.alert}</span><span>${esc(c.msg)}</span></li>`).join('');
     const acc = $('#btnAccept span');
     const L = cur();
-    acc.textContent = L && L.status === 'done' ? 'Accepted ✓ · next' : qc.verdict === 'redo' ? 'Accept anyway & next' : 'Accept & next';
+    acc.textContent = L && L.status === 'done' ? 'Accepted · next' : qc.verdict === 'redo' ? 'Accept anyway & next' : 'Accept & next';
     drawWave(samples || t.samples, t.sr, qc);
   }
 
@@ -547,7 +549,7 @@
     }
     renderHeader();
     const nx = nextTodo(S.idx);
-    if (nx < 0) { renderRecord(); toast('🎉 All lines accepted! Export them from Progress.', 5000); return; }
+    if (nx < 0) { renderRecord(); toast('All lines accepted. Export them from Progress.', 5000); return; }
     go(nx);
   }
 
@@ -572,7 +574,7 @@
         }
         shown++;
         if (rows.length < 800) {
-          const icon = { done: '✓', rec: '●', redo: '✗', todo: '○' }[st];
+          const icon = { done: IC.check, rec: IC.dot, redo: IC.cross, todo: IC.ring }[st];
           rows.push(`<li><button data-i="${i}" class="${i === S.idx ? 'cur' : ''}"><span class="n">#${i + 1}</span><span class="st ${st}">${icon}</span><span><div class="t" lang="el">${esc(L.text)}</div><div class="p">${esc(info(L.text).text)}</div></span></button></li>`);
         }
       });
@@ -643,7 +645,7 @@
     const pct = n ? Math.round(c.done / n * 100) : 0;
     $('#dBar').style.width = pct + '%';
     const remaining = n - c.done;
-    let eta = '—';
+    let eta = '–';
     const log = S.acceptLog.slice(-15);
     if (log.length >= 3) {
       const gaps = []; for (let i = 1; i < log.length; i++) { const g = (log[i] - log[i - 1]) / 1000; if (g < 600) gaps.push(g); }
@@ -759,7 +761,7 @@
     const c = { done: 0, rec: 0, redo: 0, todo: 0 };
     S.lines.forEach((L) => c[statusOf(L)]++);
     const lines = [
-      'LubaVoice AI report — ' + new Date().toLocaleString(), '',
+      'LubaVoice AI report, ' + new Date().toLocaleString(), '',
       `Lines in list:        ${S.lines.length}`, `Accepted:             ${c.done}`, `Recorded, not accepted: ${c.rec + c.redo}`, `Not recorded:         ${c.todo}`,
       `Files in this export: ${done.length} (${fmtTime(secs)} of audio)`, ''
     ];
