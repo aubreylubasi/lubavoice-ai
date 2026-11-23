@@ -42,3 +42,7 @@ Develop: edit `web-src/`, run `python3 tools/build.py`, then `node tests/core.te
 End-to-end: `python3 tests/e2e_test.py some_voice.wav` (needs Playwright and Chrome).
 
 The APK is signed with `android/app/lubavoice.keystore` (password `lubavoice`), so every new build installs over the previous one. That key is public, which is fine for a personal sideloaded app. For a Play Store release, use a private key instead.
+
+## Privacy
+
+Everything stays on your device: your text, recordings and progress. The app has no internet permission, no accounts and no tracking. Full policy: [aubreylubasi.dev/privacy.html](https://aubreylubasi.dev/privacy.html#lubavoice-ai). Terms: [aubreylubasi.dev/terms.html](https://aubreylubasi.dev/terms.html).
